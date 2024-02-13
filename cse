@@ -1,0 +1,72 @@
+#!/bin/dash
+
+FOLDER_ROOT="~/Work"
+SSH_ADDRESS='z5360922@login.cse.unsw.edu.au'
+
+subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
+# rsync -a directory1/ "$SSH_ADDRESS":directory2/
+
+# rsync -a . z5360922@login.cse.unsw.edu.au:~/Work/COMP2041
+
+# TODO: use rysnc command instead of git
+# TODO: implement -g tag to sync to github
+# TODO: implement -s tag to change sed commands
+
+if [ $# -eq 0 ]; then
+	# echo "$subject"
+	echo "Conecting..."
+	commands="clear"
+	if [ -n "$subject" ]; then
+		commands="$commands; cd $FOLDER_ROOT/$subject; pwd"
+		# echo "cse: Now in $FOLDER_ROOT""$subject..."
+	fi
+
+	if (ssh -t $SSH_ADDRESS "$commands; bash" 2> /dev/null)
+	then
+		echo "cse: Connection Successful and Terminated"
+	else
+		echo "cse: Connection Unsuccessful"
+		exit 1
+	fi
+else
+
+	if (git diff --exit-code 1>/dev/null) 
+	then
+		echo "cse: No changes to add."
+	else
+		echo -n "Changes made, name this sync: " 
+		read commit_message
+
+		git add . 
+		echo ""
+		git commit -m "$commit_message"
+		echo ""
+		git push
+		echo ""
+	fi
+
+	echo "cse: Launching into $FOLDER_ROOT""$subject..."
+
+	echo ""
+
+	commands="cd $FOLDER_ROOT/$subject; pwd; git pull "
+	if [ "$1" = "sync" ]; then
+		echo "cse: Just syncing."
+	else 
+		commands="$commands; $@"
+	fi
+
+	if ( ssh z5360922@login.cse.unsw.edu.au "$commands" )
+	then
+		echo "cse: Success"
+		# changes_made=true
+		# if $changes_made; then
+		# 	ssh z5360922@login.cse.unsw.edu.au "cd $FOLDER_ROOT/$subject; git add .; git commit -m $commit_message sync; git push"
+		# 	git pull
+		# fi
+	else
+		echo "cse: Connection Unsuccessful"
+		exit 1
+	fi
+fi
+
