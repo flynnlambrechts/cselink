@@ -4,6 +4,13 @@ FOLDER_ROOT="~/Work"
 SSH_ADDRESS='z5360922@login.cse.unsw.edu.au'
 
 subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
+
+setup() {
+	local zID
+	read -p "Enter your zID (e.g. z1234567): " zID
+	echo "$zID"
+	exit 0
+}
 # rsync -a directory1/ "$SSH_ADDRESS":directory2/
 
 # rsync -a . z5360922@login.cse.unsw.edu.au:~/Work/COMP2041
@@ -11,6 +18,8 @@ subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
 # TODO: use rysnc command instead of git
 # TODO: implement -g tag to sync to github
 # TODO: implement -s tag to change sed commands
+
+setup
 
 if [ $# -eq 0 ]; then
 	# echo "$subject"
