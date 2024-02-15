@@ -1,81 +1,59 @@
 #!/bin/dash
 
-FOLDER_ROOT="~/Work"
-SSH_ADDRESS='z5360922@login.cse.unsw.edu.au'
+SSH_ADDRESS='login.cse.unsw.edu.au'
 
 subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
 
 setup() {
 	local zID
 	read -p "Enter your zID (e.g. z1234567): " zID
-	echo "$zID"
-	exit 0
+	echo "zID: $zID" > ./.config
 }
-# rsync -a directory1/ "$SSH_ADDRESS":directory2/
 
-# rsync -a . z5360922@login.cse.unsw.edu.au:~/Work/COMP2041
-
-# TODO: use rysnc command instead of git
-# TODO: implement -g tag to sync to github
-# TODO: implement -s tag to change sed commands
-
-setup
-
-if [ $# -eq 0 ]; then
-	# echo "$subject"
-	echo "Conecting..."
-	commands="clear"
-	if [ -n "$subject" ]; then
-		commands="$commands; cd $FOLDER_ROOT/$subject; pwd"
-		# echo "cse: Now in $FOLDER_ROOT""$subject..."
-	fi
-
-	if (ssh -t $SSH_ADDRESS "$commands; bash" 2> /dev/null)
-	then
-		echo "cse: Connection Successful and Terminated"
-	else
-		echo "cse: Connection Unsuccessful"
-		exit 1
-	fi
-else
-
-	if (git diff --exit-code 1>/dev/null) 
-	then
-		echo "cse: No changes to add."
-	else
-		echo -n "Changes made, name this sync: " 
-		read commit_message
-
-		git add . 
-		echo ""
-		git commit -m "$commit_message"
-		echo ""
-		git push
-		echo ""
-	fi
-
-	echo "cse: Launching into $FOLDER_ROOT""$subject..."
-
-	echo ""
-
-	commands="cd $FOLDER_ROOT/$subject; pwd; git pull "
-	if [ "$1" = "sync" ]; then
-		echo "cse: Just syncing."
-	else 
-		commands="$commands; $@"
-	fi
-
-	if ( ssh z5360922@login.cse.unsw.edu.au "$commands" )
-	then
-		echo "cse: Success"
-		# changes_made=true
-		# if $changes_made; then
-		# 	ssh z5360922@login.cse.unsw.edu.au "cd $FOLDER_ROOT/$subject; git add .; git commit -m $commit_message sync; git push"
-		# 	git pull
-		# fi
-	else
-		echo "cse: Connection Unsuccessful"
-		exit 1
-	fi
+if [ ! -f "./.config" ]; then
+    setup
 fi
+zID=$(sed -En "s/zID: +(z[0-9]{5,})/\1/p" ./.config)
+if [ ! -n "$zID" ]; then
+    rm "./.config"
+    echo "Invalid zID in configuration. Rerun to configure"
+    exit 1;
+fi
+
+connect() {
+    commands="clear"
+    if [ ! -z '$@' ]; then 
+        commands="$commands; bash -c \"$@\""
+    fi
+    commands="$commands; bash"
+    ssh -t "$zID@$SSH_ADDRESS" "$commands"
+}
+
+
+case "$1" in
+    sync)
+        dest="$3"
+        [ -z $dest ] && dest="."
+        rsync -az "$zID@$SSH_ADDRESS:./$2/" "$dest"
+        ;;
+    connect)
+        clear
+        connect
+        ;;
+    execute)
+        shift 1
+        connect "$@"
+        ;;
+    help)
+        echo "Possible commands: "
+        echo "\t- cselink sync <source directory> <destination ('.' if blank)>"
+        echo "\t- cselink connect"
+        echo "\t- cselink execute <commands>"
+        ;;
+    *)
+        echo "Unrecognised command, try 'cselink help' to see available commands."
+        exit 1
+esac
+
+exit 0;
 
