@@ -50,7 +50,8 @@ case "$1" in
         ;;
     help)
         echo "Possible commands: "
-        echo "\t- cselink sync <source directory> <destination ('.' if blank)>"
+        echo "\t- cselink push <source> <remote destination>"
+        echo "\t- cselink pull <remote source> <destination>"
         echo "\t- cselink connect"
         echo "\t- cselink execute <commands>"
         ;;
