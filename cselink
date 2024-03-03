@@ -1,21 +1,22 @@
 #!/bin/dash
 
 SSH_ADDRESS='login.cse.unsw.edu.au'
-
+CONFIG_FILE='./.cselinkconfig'
 subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
 
 setup() {
 	local zID
 	read -p "Enter your zID (e.g. z1234567): " zID
-	echo "zID: $zID" > ./.config
+	echo "zID: $zID" > "$CONFIG_FILE"
 }
 
-if [ ! -f "./.config" ]; then
+if [ ! -f "$CONFIG_FILE" ]; then
     setup
 fi
-zID=$(sed -En "s/zID: +(z[0-9]{5,})/\1/p" ./.config)
+
+zID=$(sed -En "s/zID: +(z[0-9]{5,})/\1/p" "$CONFIG_FILE")
 if [ ! -n "$zID" ]; then
-    rm "./.config"
+    rm "$CONFIG_FILE"
     echo "Invalid zID in configuration. Rerun to configure"
     exit 1;
 fi
@@ -31,10 +32,13 @@ connect() {
 
 
 case "$1" in
-    sync)
+    pull)
         dest="$3"
         [ -z $dest ] && dest="."
-        rsync -az "$zID@$SSH_ADDRESS:./$2/" "$dest"
+        rsync -av "$zID@$SSH_ADDRESS:$2/" "$dest"
+        ;;
+    push)
+        rsync -av "$2" "$zID@$SSH_ADDRESS:$3/"
         ;;
     connect)
         clear
