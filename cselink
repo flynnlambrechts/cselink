@@ -6,8 +6,11 @@ subject=$(pwd | grep -o -E "/[A-Z]{4}[0-9]{4}.*")
 
 setup() {
 	local zID
+    local remote_path
 	read -p "Enter your zID (e.g. z1234567): " zID
+	read -p "Enter the path on the remote (e.g. COMP6991/lab01 leave blank to keep as root): " remote_path
 	echo "zID: $zID" > "$CONFIG_FILE"
+	echo "remote_path: $remote_path" >> "$CONFIG_FILE"
 }
 
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -23,6 +26,10 @@ fi
 
 connect() {
     commands="clear"
+    remote_path=$(sed -En "s/remote_path: +(.+)$/\1/p" "$CONFIG_FILE")
+    if [ -n remote_path ]; then
+        commands="$commands; cd \"$remote_path\""
+    fi
     if [ ! -z '$@' ]; then 
         commands="$commands; bash -c \"$@\""
     fi
