@@ -24,9 +24,10 @@ if [ ! -n "$zID" ]; then
     exit 1;
 fi
 
+
+remote_path=$(sed -En "s/remote_path: +(.+)$/\1/p" "$CONFIG_FILE")
 connect() {
     commands="clear"
-    remote_path=$(sed -En "s/remote_path: +(.+)$/\1/p" "$CONFIG_FILE")
     if [ -n remote_path ]; then
         commands="$commands; cd \"$remote_path\""
     fi
@@ -41,8 +42,8 @@ connect() {
 case "$1" in
     pull)
         dest="$3"
-        [ -z $dest ] && dest="."
-        rsync -av "$zID@$SSH_ADDRESS:$2/" "$dest"
+        [ -z $dest ] && dest="$2"
+        rsync -av "$zID@$SSH_ADDRESS:$remote_path/$2/" "$dest"
         ;;
     push)
         rsync -av "$2" "$zID@$SSH_ADDRESS:$3/"
